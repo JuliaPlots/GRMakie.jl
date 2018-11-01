@@ -1,6 +1,7 @@
 module GRMakie
 
 using Makie, AbstractPlotting
+import GR
 
 function project_position(scene, point, model)
     p4d = to_ndim(Vec4f0, to_ndim(Vec3f0, point, 0f0), 1f0)
@@ -166,27 +167,43 @@ function draw(scene::Scene, plot::Makie.Text)
     end
 end
 
+function draw(scene::Scene)
+    foreach(plot-> draw(scene, plot), scene.plots)
+    foreach(child-> draw(child), scene.children)
+end
 
 struct GRBackend <: AbstractPlotting.AbstractBackend
 end
 
 function AbstractPlotting.backend_display(::GRBackend, scene::Scene)
     AbstractPlotting.update!(scene)
-    screen = CairoScreen(scene, joinpath(homedir(), "Desktop", "cairo.svg"))
-    cairo_draw(screen, scene)
+    ENV["GKS_DOUBLE_BUF"] = true
+    GR.clearws()
+    draw(scene)
+    GR.updatews()
 end
 
 AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/svg", scene::SceneLike) = true
 
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/svg+xml", scene::Scene)
     AbstractPlotting.update!(scene)
-    screen = CairoScreen(scene, io)
-    cairo_draw(screen, scene)
+    oldmime = ENV["GKSwstype"]
+    GR.emergencyclosegks()
+    ENV["GKSwstype"] = "svg"
+    ENV["GKS_FILEPATH"] = tempname() * ".svg"
+    GR.clearws()
+    draw_all(scene)
+    GR.updatews()
+    GR.emergencyclosegks()
+    ENV["GKSwstype"] = oldmime
 end
+
 function __init__()
     AbstractPlotting.register_backend!(GRBackend())
 end
 
-
+function activate!()
+    AbstractPlotting.current_backend[] = GRBackend()
+end
 
 end # module
