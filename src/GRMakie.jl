@@ -167,4 +167,26 @@ function draw(scene::Scene, plot::Makie.Text)
 end
 
 
+struct GRBackend <: AbstractPlotting.AbstractBackend
+end
+
+function AbstractPlotting.backend_display(::GRBackend, scene::Scene)
+    AbstractPlotting.update!(scene)
+    screen = CairoScreen(scene, joinpath(homedir(), "Desktop", "cairo.svg"))
+    cairo_draw(screen, scene)
+end
+
+AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/svg", scene::SceneLike) = true
+
+function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/svg+xml", scene::Scene)
+    AbstractPlotting.update!(scene)
+    screen = CairoScreen(scene, io)
+    cairo_draw(screen, scene)
+end
+function __init__()
+    AbstractPlotting.register_backend!(GRBackend())
+end
+
+
+
 end # module
