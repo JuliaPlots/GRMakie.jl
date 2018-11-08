@@ -161,7 +161,7 @@ function draw(scene::Scene, plot::Makie.Text)
         GR.setcharup(chup[1], chup[2])
         GR.settextfontprec(27, 0)
         GR.setcharheight(0.022) # ts ?
-        GR.settextcolorind(Int(inqcolorfromrgb(cc.r, cc.g, cc.b)))
+        GR.settextcolorind(Int(GR.inqcolorfromrgb(cc.r, cc.g, cc.b)))
         GR.settransparency(cc.alpha)
         GR.text(pos[1], pos[2], string(txt[i]))
     end
