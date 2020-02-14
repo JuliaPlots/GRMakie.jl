@@ -187,15 +187,14 @@ AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/svg", scene::SceneL
 
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/svg+xml", scene::Scene)
     AbstractPlotting.update!(scene)
-    oldmime = ENV["GKSwstype"]
     GR.emergencyclosegks()
-    ENV["GKSwstype"] = "svg"
-    ENV["GKS_FILEPATH"] = tempname() * ".svg"
-    GR.clearws()
-    draw_all(scene)
-    GR.updatews()
-    GR.emergencyclosegks()
-    ENV["GKSwstype"] = oldmime
+    
+    withenv("GKSwstype" => "svg", "GKS_FILEPATH" => tempname() * ".svg") do
+        GR.clearws()
+        draw_all(scene)
+        GR.updatews()
+        GR.emergencyclosegks()
+    end
 end
 
 function __init__()
