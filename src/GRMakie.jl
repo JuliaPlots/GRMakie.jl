@@ -1,6 +1,6 @@
 module GRMakie
 
-using Makie, AbstractPlotting
+using AbstractPlotting
 import GR
 
 function project_position(scene, point, model)
@@ -188,7 +188,7 @@ AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/svg", scene::SceneL
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/svg+xml", scene::Scene)
     AbstractPlotting.update!(scene)
     GR.emergencyclosegks()
-    
+
     withenv("GKSwstype" => "svg", "GKS_FILEPATH" => tempname() * ".svg") do
         GR.clearws()
         draw_all(scene)
@@ -204,5 +204,6 @@ end
 function activate!()
     AbstractPlotting.current_backend[] = GRBackend()
 end
+
 
 end # module
