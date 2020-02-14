@@ -120,7 +120,7 @@ function draw(scene::Scene, plot::LineSegments)
     end
 end
 
-function draw(scene::Scene, primitive::Makie.Combined)
+function draw(scene::Scene, primitive::AbstractPlotting.Combined)
     foreach(x-> draw(scene, x), primitive.plots)
 end
 
@@ -150,7 +150,7 @@ end
 
 Plots a text.
 """
-function draw(scene::Scene, plot::Makie.Text)
+function draw(scene::Scene, plot::AbstractPlotting.Text)
     @get_attribute(plot, (textsize, color, font, align, rotation, model))
     txt = to_value(plot[1])
     position = plot.attributes[:position][]
