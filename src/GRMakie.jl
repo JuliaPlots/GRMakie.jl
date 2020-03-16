@@ -265,8 +265,16 @@ function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/x
     write(io, read(fp))
 end
 
+# struct GRScreen <: AbstractPlotting.AbstractScreen
+#     scene::Scene
+# end
+
+# Base.insert!(screen::GRScreen, scene::Scene, plot) = nothing
+
+
+
 function __init__()
-    AbstractPlotting.register_backend!(GRBackend())
+    activate!()
 end
 
 function activate!()
