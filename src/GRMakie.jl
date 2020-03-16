@@ -233,6 +233,12 @@ function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/tiff", 
     gr_save(io, scene, "tiff")
 end
 
+function AbstractPlotting.backend_show(::GRBackend, io::IO, ::Union{MIME"image/svg", MIME"image/svg+xml"}, scene::Scene)
+    AbstractPlotting.update!(scene)
+    GR.emergencyclosegks()
+    gr_save(io, scene, "svg")
+end
+
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/pdf", scene::Scene)
     AbstractPlotting.update!(scene)
     GR.emergencyclosegks()
