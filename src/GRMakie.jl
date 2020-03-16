@@ -184,17 +184,79 @@ function AbstractPlotting.backend_display(::GRBackend, scene::Scene)
 end
 
 AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/svg", scene::SceneLike) = true
+AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/svg+xml", scene::SceneLike) = true
+AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/png", scene::SceneLike) = true
+AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/jpeg", scene::SceneLike) = true
+AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/tiff", scene::SceneLike) = true
+AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/bmp", scene::SceneLike) = true
+AbstractPlotting.backend_showable(::GRBackend, m::MIME"application/pdf", scene::SceneLike) = true
+AbstractPlotting.backend_showable(::GRBackend, m::MIME"application/postscript", scene::SceneLike) = true
+AbstractPlotting.backend_showable(::GRBackend, m::MIME"application/x-tex", scene::SceneLike) = true
 
-function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/svg+xml", scene::Scene)
+AbstractPlotting.format2mime(::Type{FileIO.DataFormat{:TIFF}}) = MIME("image/tiff")
+AbstractPlotting.format2mime(::Type{FileIO.DataFormat{:BMP}}) = MIME("image/bmp")
+AbstractPlotting.format2mime(::Type{FileIO.DataFormat{:PDF}}) = MIME("application/pdf")
+AbstractPlotting.format2mime(::Type{FileIO.DataFormat{:TEX}}) = MIME("application/x-tex")
+
+function gr_save(io, scene, filetype)
+    fp = tempname() * "." * filetype
+
+    GR.beginprint(fp)
+    GR.endprint()
+    
+    write(io, read(fp))
+    
+    rm(fp)
+end
+
+function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/png", scene::Scene)
     AbstractPlotting.update!(scene)
     GR.emergencyclosegks()
+    gr_save(io, scene, "png")
+end
 
-    withenv("GKSwstype" => "svg", "GKS_FILEPATH" => tempname() * ".svg") do
+function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/jpeg", scene::Scene)
+    AbstractPlotting.update!(scene)
+    GR.emergencyclosegks()
+    gr_save(io, scene, "jpeg")
+end
+
+function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/bmp", scene::Scene)
+    AbstractPlotting.update!(scene)
+    GR.emergencyclosegks()
+    gr_save(io, scene, "bmp")
+end
+
+function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/tiff", scene::Scene)
+    AbstractPlotting.update!(scene)
+    GR.emergencyclosegks()
+    gr_save(io, scene, "tiff")
+end
+
+function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/pdf", scene::Scene)
+    AbstractPlotting.update!(scene)
+    GR.emergencyclosegks()
+    gr_save(io, scene, "pdf")
+end
+
+function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/postscript", scene::Scene)
+    AbstractPlotting.update!(scene)
+    GR.emergencyclosegks()
+    gr_save(io, scene, "eps")
+end
+
+function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/x-tex", scene::Scene)
+    AbstractPlotting.update!(scene)
+    GR.emergencyclosegks()
+    fp = tempname() * ".tex"
+    withenv("GKS_WSTYPE" => "pgf", "GKS_FILEPATH" => fp) do
         GR.clearws()
         draw_all(scene)
         GR.updatews()
         GR.emergencyclosegks()
     end
+    
+    write(io, read(fp))
 end
 
 function __init__()
