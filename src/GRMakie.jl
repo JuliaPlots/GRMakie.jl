@@ -193,19 +193,23 @@ AbstractPlotting.backend_showable(::GRBackend, m::MIME"application/pdf", scene::
 AbstractPlotting.backend_showable(::GRBackend, m::MIME"application/postscript", scene::SceneLike) = true
 AbstractPlotting.backend_showable(::GRBackend, m::MIME"application/x-tex", scene::SceneLike) = true
 
-AbstractPlotting.format2mime(::Type{FileIO.DataFormat{:TIFF}}) = MIME("image/tiff")
-AbstractPlotting.format2mime(::Type{FileIO.DataFormat{:BMP}}) = MIME("image/bmp")
-AbstractPlotting.format2mime(::Type{FileIO.DataFormat{:PDF}}) = MIME("application/pdf")
-AbstractPlotting.format2mime(::Type{FileIO.DataFormat{:TEX}}) = MIME("application/x-tex")
+AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:TIFF}}) = MIME("image/tiff")
+AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:BMP}}) = MIME("image/bmp")
+AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:PDF}}) = MIME("application/pdf")
+AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:TEX}}) = MIME("application/x-tex")
+AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:EPS}}) = MIME("application/postscript")
 
 function gr_save(io, scene, filetype)
     fp = tempname() * "." * filetype
 
+    touch(fp)
+
     GR.beginprint(fp)
+    draw(scene)
     GR.endprint()
-    
+
     write(io, read(fp))
-    
+
     rm(fp)
 end
 
@@ -261,7 +265,7 @@ function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/x
         GR.updatews()
         GR.emergencyclosegks()
     end
-    
+
     write(io, read(fp))
 end
 
@@ -275,6 +279,7 @@ end
 
 function __init__()
     activate!()
+    ENV["GKS_ENCODING"] = haskey(ENV, "GKS_ENCODING") ? ENV["GKS_ENCODING"] : "utf-8"
 end
 
 function activate!()
