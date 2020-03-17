@@ -17,6 +17,30 @@ function project_scale(scene::Scene, s)
     p = (scene.camera.projectionview[] * p4d)[Vec(1, 2)] ./ 2f0
 end
 
+
+const marker_translation_table = Dict(
+    '■' => GR.MARKERTYPE_SOLID_SQUARE,
+    '★' => GR.MARKERTYPE_SOLID_STAR,
+    '◆' => GR.MARKERTYPE_SOLID_DIAMOND,
+    '⬢' => GR.MARKERTYPE_HEXAGON,
+    '✚' => GR.MARKERTYPE_SOLID_PLUS,
+    '❌' => GR.MARKERTYPE_DIAGONAL_CROSS,
+    '▲' => GR.MARKERTYPE_SOLID_TRI_UP,
+    '▼' => GR.MARKERTYPE_SOLID_TRI_DOWN,
+    '◀' => GR.MARKERTYPE_SOLID_TRI_LEFT,
+    '▶' => GR.MARKERTYPE_SOLID_TRI_RIGHT,
+    '⬟' => GR.MARKERTYPE_PENTAGON,
+    '⯄' => GR.MARKERTYPE_OCTAGON,
+    '✦' => GR.MARKERTYPE_STAR_4,
+    '🟋' => GR.MARKERTYPE_STAR_6,
+    '✷' => GR.MARKERTYPE_STAR_8,
+    '┃' => GR.MARKERTYPE_VLINE,
+    '━' => GR.MARKERTYPE_HLINE,
+    '+' => GR.MARKERTYPE_PLUS,
+    'x' => GR.MARKERTYPE_DIAGONAL_CROSS,
+    '●' => GR.MARKERTYPE_SOLID_CIRCLE
+)
+
 """
     `scatter(x, y, z)` / `scatter(x, y)` / `scatter(positions)`
 
@@ -26,9 +50,9 @@ function draw(scene::Scene, plot::Scatter)
     fields = @get_attribute(plot, (color, markersize, strokecolor, strokewidth, marker))
     model = plot[:model][]
     broadcast_foreach(plot[1][], fields...) do point, c, markersize, strokecolor, strokewidth, marker
-        scale = project_scale(scene, markersize)[1] * 500 / 6
+        scale = project_scale(scene, markersize)[1] * 2500 / 6
         pos = project_position(scene, point, model)
-        GR.setmarkertype(GR.MARKERTYPE_SOLID_CIRCLE)
+        GR.setmarkertype(get(marker_translation_table, marker, GR.MARKERTYPE_SOLID_CIRCLE))
         GR.setmarkersize(scale)
         GR.setmarkercolorind(Int(GR.inqcolorfromrgb(c.r, c.g, c.b)))
         GR.settransparency(c.alpha)
@@ -160,7 +184,7 @@ function draw(scene::Scene, plot::AbstractPlotting.Text)
         chup = r * Vec2f0(0, 1)
         GR.setcharup(chup[1], chup[2])
         GR.settextfontprec(27, 0)
-        GR.setcharheight(0.022) # ts ?
+        GR.setcharheight(norm(ts)*0.11) # ts ?
         GR.settextcolorind(Int(GR.inqcolorfromrgb(cc.r, cc.g, cc.b)))
         GR.settransparency(cc.alpha)
         GR.text(pos[1], pos[2], string(txt[i]))
@@ -168,7 +192,7 @@ function draw(scene::Scene, plot::AbstractPlotting.Text)
 end
 
 function draw(scene::Scene)
-    foreach(plot-> draw(scene, plot), scene.plots)
+    foreach(plot-> draw(scene, plot), filter(x -> x.visible[], scene.plots))
     foreach(child-> draw(child), scene.children)
 end
 
@@ -183,15 +207,13 @@ function AbstractPlotting.backend_display(::GRBackend, scene::Scene)
     GR.updatews()
 end
 
-AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/svg", scene::SceneLike) = true
-AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/svg+xml", scene::SceneLike) = true
-AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/png", scene::SceneLike) = true
-AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/jpeg", scene::SceneLike) = true
-AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/tiff", scene::SceneLike) = true
-AbstractPlotting.backend_showable(::GRBackend, m::MIME"image/bmp", scene::SceneLike) = true
-AbstractPlotting.backend_showable(::GRBackend, m::MIME"application/pdf", scene::SceneLike) = true
-AbstractPlotting.backend_showable(::GRBackend, m::MIME"application/postscript", scene::SceneLike) = true
-AbstractPlotting.backend_showable(::GRBackend, m::MIME"application/x-tex", scene::SceneLike) = true
+const GR_SUPPORTED_TYPES = Union{
+    MIME"image/svg", MIME"image/svg+xml", MIME"image/png", MIME"image/jpeg",
+    MIME"image/tiff", MIME"image/bmp", MIME"application/pdf",
+    MIME"application/postscript", MIME"application/x-tex"
+}
+
+AbstractPlotting.backend_showable(::GRBackend, ::GR_SUPPORTED_TYPES, scene::SceneLike) = true
 
 AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:TIFF}}) = MIME("image/tiff")
 AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:BMP}}) = MIME("image/bmp")
@@ -261,7 +283,7 @@ function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/x
     fp = tempname() * ".tex"
     withenv("GKS_WSTYPE" => "pgf", "GKS_FILEPATH" => fp) do
         GR.clearws()
-        draw_all(scene)
+        draw(scene)
         GR.updatews()
         GR.emergencyclosegks()
     end
@@ -269,13 +291,13 @@ function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/x
     write(io, read(fp))
 end
 
-# struct GRScreen <: AbstractPlotting.AbstractScreen
-#     scene::Scene
-# end
+struct GRScreen <: AbstractPlotting.AbstractScreen
+    scene::Scene
+end
 
-# Base.insert!(screen::GRScreen, scene::Scene, plot) = nothing
+Base.insert!(screen::GRScreen, scene::Scene, plot) = nothing
 
-
+AbstractPlotting.push_screen!(scene::Scene, ::Nothing) = nothing
 
 function __init__()
     activate!()
