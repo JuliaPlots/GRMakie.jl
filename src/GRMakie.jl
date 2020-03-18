@@ -1,6 +1,7 @@
 module GRMakie
 
 using AbstractPlotting
+using Printf
 import GR
 
 function project_position(scene, point, model)
@@ -289,6 +290,22 @@ function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/x
     end
 
     write(io, read(fp))
+end
+
+function AbstractPlotting.colorbuffer(scr::GRScreen)
+    scene = scr.scene
+    width, height = pixelarea(scene)[]
+    rcmat = Array{UInt8}(4, width, height)   # GR outputs row major images to memory.
+    ncmat = Array{UInt8}(4, width, height)   # We need to return a matrix of colors.
+    pstr = @sprintf "%p" Int(pointer(rcmat)) # Print in octal notation
+    GR.beginprint("!$(width)x$(height)@$(pstr).mem")
+    draw(scene)
+    GR.endprint()
+    for i in 1:height, j in 1:width
+        ncmat[j, i] = Colors.RGBA((rcmat[:, i, j] ./ 255)...) # divide by 255 to move to N0f8
+    end
+    
+    return ncmat
 end
 
 struct GRScreen <: AbstractPlotting.AbstractScreen
