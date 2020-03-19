@@ -279,6 +279,17 @@ function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/x
     write(io, read(fp))
 end
 
+function gr_record(f::Function, filename::String, scene::Scene, iter)
+    ext = splitext(filename)[2]
+    withenv("GKS_WSTYPE" => uppercase(ext), "GKS_FILEPATH" => filename) do
+        for i in iter
+            GR.clearws()
+            f(i)
+            draw(scene)
+        end
+    end
+end
+
 struct GRScreen <: AbstractPlotting.AbstractScreen
     scene::Scene
 end
