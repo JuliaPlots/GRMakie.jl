@@ -195,7 +195,7 @@ function draw(scene::Scene, plot::AbstractPlotting.Text)
 end
 
 function draw(scene::Scene)
-    foreach(plot-> draw(scene, plot), filter(x -> x.visible[], scene.plots))
+    foreach(plot-> draw(scene, plot), filter(x -> get(x.attributes.attributes, :visible, Node(false))[], scene.plots))
     foreach(child-> draw(child), scene.children)
 end
 
