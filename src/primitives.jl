@@ -9,7 +9,6 @@ function draw(scene::Scene, plot::Lines)
         # take camera from scene + model transformation matrix and apply it to pos
         project_position(scene, pos, plot[:model][])
     end
-    @show positions
     GR.polyline(first.(positions), last.(positions))
 end
 
@@ -27,24 +26,22 @@ function draw(scene::Scene, plot::LineSegments)
         project_position(scene, pos, plot[:model][])
     end
     @get_attribute(plot, (color, linewidth, linestyle))
+    if color isa Union{RGBA, Symbol}
+        color = fill(RGBA(color), length(positions))
+    end
+    if linewidth isa Number
+        linewidth = fill(linewidth, length(positions))
+    end
     #@show positions
     #@show color
     #@show linewidth
     #@show linestyle
-    colors = if color[] isa Colors.Colorant
-            [color for i in 1:length(positions)]
-        else
-            color
-        end
-
-    broadcast_foreach(1:length(positions), color[], linewidth[], linestyle[]) do i, c, lw, ls
-        if !iseven(i)
-            GR.setlinewidth(lw)
-            GR.setlinecolorind(Int(GR.inqcolorfromrgb(red(c), green(c), blue(c))))
-            GR.settransparency(alpha(c))
-            a, b = positions[i], positions[i + 1]
-            GR.polyline([a[1], b[1]], [a[2], b[2]])
-        end
+    for i in 1:2:length(positions)
+        GR.setlinewidth(linewidth[i])
+        GR.setlinecolorind(Int(GR.inqcolorfromrgb(color[i].r, color[i].g, color[i].b)))
+        GR.settransparency(color[i].alpha)
+        a, b = positions[i], positions[i + 1]
+        GR.polyline([a[1], b[1]], [a[2], b[2]])
     end
 end
 
@@ -66,7 +63,7 @@ function draw(scene::Scene, plot::AbstractPlotting.Text)
         GR.setcharheight(0.022) # ts ?
         GR.settextcolorind(Int(GR.inqcolorfromrgb(cc.r, cc.g, cc.b)))
         GR.settransparency(cc.alpha)
-        @show pos txt[i]
+        # @show (pos, txt[i])
         GR.text(pos[1], pos[2], string(txt[i]))
     end
 end
