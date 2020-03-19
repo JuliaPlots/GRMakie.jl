@@ -292,6 +292,10 @@ function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/x
     write(io, read(fp))
 end
 
+struct GRScreen <: AbstractPlotting.AbstractScreen
+    scene::Scene
+end
+
 function AbstractPlotting.colorbuffer(scr::GRScreen)
     scene = scr.scene
     width, height = pixelarea(scene)[]
@@ -306,10 +310,6 @@ function AbstractPlotting.colorbuffer(scr::GRScreen)
     end
 
     return ncmat
-end
-
-struct GRScreen <: AbstractPlotting.AbstractScreen
-    scene::Scene
 end
 
 Base.insert!(screen::GRScreen, scene::Scene, plot) = nothing
