@@ -10,6 +10,16 @@ include("utils.jl")
 include("primitives.jl")
 include("saving.jl")
 
+
+Base.show(io::IO, ::MIME"text/plain", scene::Scene) = (
+    withenv("GKS_WSTYPE" => "0") do
+        AbstractPlotting.update!(scene)
+        GR.clearws()
+        draw(scene)
+        GR.updatews()
+    end
+)
+
 function activate!()
     AbstractPlotting.current_backend[] = GRBackend()
 end
