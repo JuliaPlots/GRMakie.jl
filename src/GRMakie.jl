@@ -8,7 +8,7 @@ function project_position(scene, point, model)
     p4d = to_ndim(Vec4f0, to_ndim(Vec3f0, point, 0f0), 1f0)
     clip = scene.camera.projectionview[] * model * p4d
     p = (clip / clip[4])[Vec(1, 2)]
-    (p .+ 1) ./ 2
+    # (p .+ 1) ./ 2
 end
 
 project_scale(scene::Scene, s::Number) = project_scale(scene, Vec2f0(s))
@@ -304,7 +304,7 @@ function AbstractPlotting.colorbuffer(scr::GRScreen)
     for i in 1:height, j in 1:width
         ncmat[j, i] = AbstractPlotting.Colors.RGBA((rcmat[:, i, j] ./ 255)...) # divide by 255 to move to N0f8
     end
-    
+
     return ncmat
 end
 
