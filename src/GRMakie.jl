@@ -8,7 +8,7 @@ function project_position(scene, point, model)
     p4d = to_ndim(Vec4f0, to_ndim(Vec3f0, point, 0f0), 1f0)
     clip = scene.camera.projectionview[] * model * p4d
     p = (clip / clip[4])[Vec(1, 2)]
-    # (p .+ 1) ./ 2
+    (p .+ 1) ./ 2
 end
 
 project_scale(scene::Scene, s::Number) = project_scale(scene, Vec2f0(s))
@@ -115,6 +115,7 @@ function draw(scene::Scene, plot::Lines)
         # take camera from scene + model transformation matrix and apply it to pos
         project_position(scene, pos, plot[:model][])
     end
+    @show positions
     GR.polyline(first.(positions), last.(positions))
 end
 
@@ -185,9 +186,10 @@ function draw(scene::Scene, plot::AbstractPlotting.Text)
         chup = r * Vec2f0(0, 1)
         GR.setcharup(chup[1], chup[2])
         GR.settextfontprec(27, 0)
-        GR.setcharheight(norm(ts)*0.11) # ts ?
+        GR.setcharheight(0.022) # ts ?
         GR.settextcolorind(Int(GR.inqcolorfromrgb(cc.r, cc.g, cc.b)))
         GR.settransparency(cc.alpha)
+        @show pos txt[i]
         GR.text(pos[1], pos[2], string(txt[i]))
     end
 end
@@ -238,55 +240,46 @@ end
 
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/png", scene::Scene)
     AbstractPlotting.update!(scene)
-    GR.emergencyclosegks()
     gr_save(io, scene, "png")
 end
 
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/jpeg", scene::Scene)
     AbstractPlotting.update!(scene)
-    GR.emergencyclosegks()
     gr_save(io, scene, "jpeg")
 end
 
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/bmp", scene::Scene)
     AbstractPlotting.update!(scene)
-    GR.emergencyclosegks()
     gr_save(io, scene, "bmp")
 end
 
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"image/tiff", scene::Scene)
     AbstractPlotting.update!(scene)
-    GR.emergencyclosegks()
     gr_save(io, scene, "tiff")
 end
 
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::Union{MIME"image/svg", MIME"image/svg+xml"}, scene::Scene)
     AbstractPlotting.update!(scene)
-    GR.emergencyclosegks()
     gr_save(io, scene, "svg")
 end
 
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/pdf", scene::Scene)
     AbstractPlotting.update!(scene)
-    GR.emergencyclosegks()
     gr_save(io, scene, "pdf")
 end
 
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/postscript", scene::Scene)
     AbstractPlotting.update!(scene)
-    GR.emergencyclosegks()
     gr_save(io, scene, "eps")
 end
 
 function AbstractPlotting.backend_show(::GRBackend, io::IO, ::MIME"application/x-tex", scene::Scene)
     AbstractPlotting.update!(scene)
-    GR.emergencyclosegks()
     fp = tempname() * ".tex"
     withenv("GKS_WSTYPE" => "pgf", "GKS_FILEPATH" => fp) do
         GR.clearws()
         draw(scene)
         GR.updatews()
-        GR.emergencyclosegks()
     end
 
     write(io, read(fp))
@@ -319,6 +312,7 @@ AbstractPlotting.push_screen!(scene::Scene, ::Nothing) = nothing
 function __init__()
     activate!()
     ENV["GKS_ENCODING"] = haskey(ENV, "GKS_ENCODING") ? ENV["GKS_ENCODING"] : "utf-8"
+    GR.selntran(0)
 end
 
 function activate!()
