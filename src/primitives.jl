@@ -31,10 +31,16 @@ function draw(scene::Scene, plot::LineSegments)
     #@show color
     #@show linewidth
     #@show linestyle
+    colors = if color isa Colors.Colorant
+            [color for i in 1:length(positions)]
+        else
+            color
+        end
+
     for i in 1:2:length(positions)
         GR.setlinewidth(linewidth[i])
-        GR.setlinecolorind(Int(GR.inqcolorfromrgb(color[i].r, color[i].g, color[i].b)))
-        GR.settransparency(color[i].alpha)
+        GR.setlinecolorind(Int(GR.inqcolorfromrgb(colors[i].r, colors[i].g, colors[i].b)))
+        GR.settransparency(colors[i].alpha)
         a, b = positions[i], positions[i + 1]
         GR.polyline([a[1], b[1]], [a[2], b[2]])
     end
