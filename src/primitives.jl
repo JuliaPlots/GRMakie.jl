@@ -38,12 +38,13 @@ function draw(scene::Scene, plot::LineSegments)
         end
 
     broadcast_foreach(1:length(positions), color[], linewidth[], linestyle[]) do i, c, lw, ls
-        iseven(i) && continue
-        GR.setlinewidth(lw)
-        GR.setlinecolorind(Int(GR.inqcolorfromrgb(red(c), green(c), blue(c))))
-        GR.settransparency(alpha(c))
-        a, b = positions[i], positions[i + 1]
-        GR.polyline([a[1], b[1]], [a[2], b[2]])
+        if !iseven(i)
+            GR.setlinewidth(lw)
+            GR.setlinecolorind(Int(GR.inqcolorfromrgb(red(c), green(c), blue(c))))
+            GR.settransparency(alpha(c))
+            a, b = positions[i], positions[i + 1]
+            GR.polyline([a[1], b[1]], [a[2], b[2]])
+        end
     end
 end
 
