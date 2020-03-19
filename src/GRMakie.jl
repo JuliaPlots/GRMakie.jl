@@ -1,7 +1,7 @@
 module GRMakie
 
 using AbstractPlotting
-using Printf
+using Colors, Printf
 import GR
 
 function project_position(scene, point, model)
@@ -218,12 +218,6 @@ const GR_SUPPORTED_TYPES = Union{
 
 AbstractPlotting.backend_showable(::GRBackend, ::GR_SUPPORTED_TYPES, scene::SceneLike) = true
 
-AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:TIFF}}) = MIME("image/tiff")
-AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:BMP}}) = MIME("image/bmp")
-AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:PDF}}) = MIME("application/pdf")
-AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:TEX}}) = MIME("application/x-tex")
-AbstractPlotting.format2mime(::Type{AbstractPlotting.FileIO.DataFormat{:EPS}}) = MIME("application/postscript")
-
 function gr_save(io, scene, filetype)
     fp = tempname() * "." * filetype
 
@@ -293,7 +287,7 @@ function AbstractPlotting.colorbuffer(scr::GRScreen)
     scene = scr.scene
     width, height = pixelarea(scene)[]
     rcmat = Array{UInt8}(4, width, height)   # GR outputs row major images to memory.
-    ncmat = Array{AbstractPlotting.Colors.RGBA}(width, height)   # We need to return a matrix of colors.
+    ncmat = Array{RGBA}(width, height)   # We need to return a matrix of colors.
     pstr = @sprintf "%p" Int(pointer(rcmat)) # Print in octal notation
     GR.beginprint("!$(width)x$(height)@$(pstr).mem")
     draw(scene)
