@@ -2,7 +2,14 @@ function project_position(scene, point, model)
     p4d = to_ndim(Vec4f0, to_ndim(Vec3f0, point, 0f0), 1f0)
     clip = scene.camera.projectionview[] * model * p4d
     p = (clip / clip[4])[Vec(1, 2)]
-    (p .+ 1) ./ 2
+    p = collect((p .+ 1) ./ 2)
+    w, h = scene.camera.resolution[]
+    if w > h
+        p[2:2:end] .*= (h / w)
+    else
+        p[1:2:end] .*= (w / h)
+    end
+    p
 end
 
 project_scale(scene::Scene, s::Number) = project_scale(scene, Vec2f0(s))

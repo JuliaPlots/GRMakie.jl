@@ -59,11 +59,11 @@ function draw(scene::Scene, plot::AbstractPlotting.Text)
         pos = project_position(scene, p, model)
         chup = r * Vec2f0(0, 1)
         GR.setcharup(chup[1], chup[2])
-        GR.settextfontprec(27, 0)
-        GR.setcharheight(0.022) # ts ?
+        GR.settextfontprec(233, 3)
+        GR.setcharheight(0.018) # ts ???
         GR.settextcolorind(Int(GR.inqcolorfromrgb(cc.r, cc.g, cc.b)))
         GR.settransparency(cc.alpha)
-        # @show (pos, txt[i])
+        GR.settextalign(1, 4)
         GR.text(pos[1], pos[2], string(txt[i]))
     end
 end
@@ -151,8 +151,23 @@ function draw(scene::Scene, plot::MeshScatter)
     @get_attribute(plot, (marker,markersize,rotations,colormap,colorrange))
 end
 
+function setup_plot(scene)
+    mwidth, mheight, width, height = GR.inqdspsize()
+    size_factor = 0.25  # 25% of the display width
+    w, h = scene.camera.resolution[]
+    if w > h
+        GR.setwsviewport(0, size_factor * mwidth, 0, size_factor * mwidth * h / w)
+        GR.setwswindow(0, 1, 0, h / w)
+    else
+        GR.setwsviewport(0, size_factor * mheight * w / h, 0, size_factor * mheight)
+        GR.setwswindow(0, w / h, 0, 1)
+    end
+    GR.selntran(0)
+end
+
 # The toplevel method - this draws all plots and child scenes
 function draw(scene::Scene)
+    setup_plot(scene)
     foreach(plot-> draw(scene, plot), scene.plots)
     foreach(child-> draw(child), scene.children)
 end
