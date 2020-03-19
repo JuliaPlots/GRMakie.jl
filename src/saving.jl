@@ -2,7 +2,7 @@
 const GR_SUPPORTED_TYPES = Union{
     MIME"image/svg", MIME"image/svg+xml", MIME"image/png", MIME"image/jpeg",
     MIME"image/tiff", MIME"image/bmp", MIME"application/pdf",
-    MIME"application/postscript", MIME"application/x-tex"
+    MIME"application/postscript", MIME"application/x-tex", MIME"text/plain"
 }
 
 backend_showable(::GRBackend, ::GR_SUPPORTED_TYPES, scene::SceneLike) = true
@@ -66,6 +66,15 @@ function backend_show(::GRBackend, io::IO, ::MIME"application/x-tex", scene::Sce
     end
 
     write(io, read(fp))
+end
+
+function backend_show(::GRBackend, io::IO, ::MIME"text/plain", scene::Scene)
+    withenv("GKS_WSTYPE" => "0") do
+        AbstractPlotting.update!(scene)
+        GR.clearws()
+        draw(scene)
+        GR.updatews()
+    end
 end
 
 function gr_record(f::Function, filename::String, scene::Scene, iter)
