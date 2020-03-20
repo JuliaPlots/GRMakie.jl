@@ -9,7 +9,7 @@ function project_position(scene, point, model)
     else
         p[1:2:end] .*= (w / h)
     end
-    p
+    return Vec2f0(p)
 end
 
 project_scale(scene::Scene, s::Number) = project_scale(scene, Vec2f0(s))
@@ -17,6 +17,7 @@ project_scale(scene::Scene, s::Number) = project_scale(scene, Vec2f0(s))
 function project_scale(scene::Scene, s)
     p4d = to_ndim(Vec4f0, s, 0f0)
     p = (scene.camera.projectionview[] * p4d)[Vec(1, 2)] ./ 2f0
+    return Vec2f0(p)
 end
 
 const marker_translation_table = Dict(
@@ -42,19 +43,64 @@ const marker_translation_table = Dict(
     '●' => GR.MARKERTYPE_SOLID_CIRCLE
 )
 
+# Color utilities
+gr_color(c) = gr_color(c, color_type(c))
+gr_color(c, ::Type) = gr_color(RGBA(c), RGB) # generic fallback
+gr_color(c, ::Symbol) = gr_color(Colors.colorant(c), RGB)
+function gr_color(c, ::Type{<:AbstractRGB})
+    return UInt32(
+        round(UInt, clamp(alpha(c) * 255, 0, 255)) << 24 +
+        round(UInt,  clamp(blue(c) * 255, 0, 255)) << 16 +
+        round(UInt, clamp(green(c) * 255, 0, 255)) << 8  +
+        round(UInt,   clamp(red(c) * 255, 0, 255))
+    )
+end
+function gr_color(c, ::Type{<:AbstractGray})
+    g = round(UInt, clamp(gray(c) * 255, 0, 255))
+    α = round(UInt, clamp(alpha(c) * 255, 0, 255))
+    return UInt32( α<<24 + g<<16 + g<<8 + g )
+end
+
+function gr_colorind(c)
+    convert(Int, GR.inqcolorfromrgb(red(c), green(c), blue(c)))
+end
+
+# Heatmap positioning
+function is_uniformly_spaced(v; tol=1e-6)
+  dv = diff(v)
+  maximum(dv) - minimum(dv) < tol * mean(abs.(dv))
+end
+
+is_uniformly_spaced(::AbstractPlotting.ClosedInterval) = true
+
+is_uniformly_spaced(::AbstractRange) = true
+
+# surface utilities
+# This function will return a vector form of `x` and `y`
+# if needed, taking the lengths from `z`.
+function ensure_vector(x::AbstractRange; size)
+    return collect(x)
+end
+function ensure_vector(x::Vector; size)
+    return x
+end
+function ensure_vector(x::ClosedInterval; size)
+    return collect(LinRange(extrema(x)..., size))
+end
+# Backend utilities
 struct GRBackend <: AbstractPlotting.AbstractBackend
+end
+struct GRScreen <: AbstractPlotting.AbstractScreen
+    scene::Scene
 end
 
 function AbstractPlotting.backend_display(::GRBackend, scene::Scene)
-    AbstractPlotting.update!(scene)
-    ENV["GKS_DOUBLE_BUF"] = true
-    GR.clearws()
-    draw(scene)
-    GR.updatews()
-end
-
-struct GRScreen <: AbstractPlotting.AbstractScreen
-    scene::Scene
+    withenv("GKS_WSTYPE" => "0") do
+        AbstractPlotting.update!(scene)
+        GR.clearws()
+        gr_draw(scene)
+        GR.updatews()
+    end
 end
 
 # TODO we need to revamp these!
@@ -69,9 +115,9 @@ AbstractPlotting.push_screen!(scene::Scene, ::Nothing) = nothing
 function AbstractPlotting.colorbuffer(scr::GRScreen)
     scene = scr.scene
     height, width = widths(pixelarea(scene)[])
-    rcmat = Array{UInt8}(undef, 4, width, height)   # GR outputs row major images to memory.
-    ncmat = Array{RGBA}(undef, width, height)       # We need to return a matrix of colors.
-    pstr = @sprintf "%p" Int(pointer(rcmat)) # Print in octal notation
+    rcmat = Array{UInt8}(undef, 4, width, height) # GR outputs row major images to memory.
+    ncmat = Array{RGBA}(undef, width, height)     # We need to return a matrix of colors.
+    pstr = @sprintf "%p" Int(pointer(rcmat))      # Print in octal notation
     GR.beginprint("!$(width)x$(height)@$(pstr).mem")
     draw(scene)
     GR.endprint()

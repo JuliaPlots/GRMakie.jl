@@ -120,7 +120,11 @@ function draw(scene::Scene, plot::Image)
     @get_attribute plot (colormap, colorrange)
 end
 
-
+to_image(values::Matrix{<: Colorant}, attributes) = RGBA.(values)
+function to_image(values::Matrix{<: Real}, attributes)
+    AbstractPlotting.@get_attribute attributes (colormap, colorrange)
+    return AbstractPlotting.interpolated_getindex.(Ref(colormap), values, (colorrange,))
+end
 # could be implemented via image, but might be optimized specifically by the backend
 """
     `heatmap(x, y, values)` or `heatmap(values)`
@@ -128,7 +132,41 @@ end
 Plots a heatmap as an image on `x, y` (defaults to interpretation as dimensions).
 """
 function draw(scene::Scene, plot::Heatmap)
+    # TODO:
+    # - get interpolation working consistently
+    # - get levels to work, if they even do
     @get_attribute(plot, (colormap,colorrange,linewidth,levels,fxaa,interpolate))
+
+    image = plot[3][]
+    x, y = plot[1][], plot[2][]
+    model = plot.model[]
+
+    interp = plot.interpolate[]
+
+    imsize = (AbstractPlotting.extrema_nan(x), AbstractPlotting.extrema_nan(y))
+
+    _xy_min = project_position(scene, Point2f0(first.(imsize)), model)
+    _xy_max = project_position(scene, Point2f0(last.(imsize)), model)
+
+    if is_uniformly_spaced(x) && is_uniformly_spaced(y)
+
+        xy_min = min.(_xy_min, _xy_max)
+        xy_max = max.(_xy_min, _xy_max)
+
+        colors = gr_color.(to_image(image, plot))
+
+        # Main.@infiltrate
+
+        GR.drawimage(
+            xy_min[1],
+            xy_max[1],
+            xy_min[2],
+            xy_max[2],
+            size(image)[1],
+            size(image)[2],
+            colors
+        )
+    end
 end
 
 """
