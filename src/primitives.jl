@@ -1,15 +1,38 @@
 
+gr_poly_line(points::Vector{Vec2f0}) = GR.polyline(first.(points), last.(points))
+gr_poly_line(points::Vector{Vec3f0}) = GR.polyline(first.(points), getindex.(points, 2), last.(points))
+
 """
     `lines(x, y, z)` / `lines(x, y)` / `lines(positions)`
 
 Creates a connected line plot for each element in `(x, y, z)`, `(x, y)` or `positions`.
 """
 function draw(scene::Scene, plot::Lines)
+    # TODO:
+    # - Continuous color (`color = 1:10`)
     positions = map(plot[1][]) do pos
         # take camera from scene + model transformation matrix and apply it to pos
         project_position(scene, pos, plot[:model][])
     end
-    GR.polyline(first.(positions), last.(positions))
+
+    c = if plot.color[] isa Symbol
+            parse(Colorant, plot.color[])
+        elseif plot.color[] isa Tuple{Symbol, Float64}
+            RGBA(parse(Colorant, plot.color[][1]), plot.color[][2])
+        else
+            plot.color[]
+        end
+    # TODO change this to an array
+
+    GR.settransparency(alpha(c))
+    GR.setlinecolorind(gr_colorind(c))
+    GR.setlinewidth(plot.linewidth[])
+    gr_poly_line(positions)
+    # broadcast_foreach(1:length(positions), plot.color[], plot.linewidth[], plot.linestyle[]) do i, c, lw, ls
+        # GR.settransparency(alpha(c))
+        # GR.setlinecolorind(gr_color(c))
+    #     GR.polyline(x, y, )
+    # end
 end
 
 """
