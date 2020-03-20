@@ -98,7 +98,7 @@ Plots a marker for each element in `(x, y, z)`, `(x, y)`, or `positions`.
 function draw(scene::Scene, plot::Scatter)
     fields = @get_attribute(plot, (color, colormap, colorrange, markersize, strokecolor, strokewidth, marker))
     model = plot[:model][]
-    color isa AbstractVector && (color = to_image(collect(color), plot))
+    color isa AbstractVector && (color = to_image(float.(collect(color)), plot))
     broadcast_foreach(plot[1][], color, markersize, strokecolor, strokewidth, marker) do point, c, markersize, strokecolor, strokewidth, marker
         scale = project_scale(scene, markersize)[1] * 2500 / 6
         pos = project_position(scene, point, model)
