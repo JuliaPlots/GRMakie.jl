@@ -10,7 +10,7 @@ filter!(database) do example
     ))
 end
 
-format_save_path = joinpath(@__DIR__, "test_formats")
+format_save_path = joinpath(@__DIR__, "test_format")
 isdir(format_save_path) && rm(format_save_path, recursive = true)
 mkpath(format_save_path)
 savepath(uid, fmt) = joinpath(format_save_path, "$uid.$fmt")
