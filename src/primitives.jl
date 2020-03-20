@@ -60,11 +60,10 @@ function draw(scene::Scene, plot::LineSegments)
     #@show linewidth
     #@show linestyle
     for i in 1:2:length(positions)
+        GR.settransparency(alpha(color[i]))
+        GR.setlinecolorind(gr_colorind(color[i]))
         GR.setlinewidth(linewidth[i])
-        GR.setlinecolorind(Int(GR.inqcolorfromrgb(color[i].r, color[i].g, color[i].b)))
-        GR.settransparency(color[i].alpha)
-        a, b = positions[i], positions[i + 1]
-        GR.polyline([a[1], b[1]], [a[2], b[2]])
+        gr_poly_line(positions[i:(i+1)])
     end
 end
 
