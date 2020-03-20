@@ -246,13 +246,16 @@ function setup_plot(scene)
     GR.selntran(0)
 end
 
-# The toplevel method - this draws all plots and child scenes
-function draw(scene::Scene)
+# The toplevel method - this sets up GR attributes et cetera
+function gr_draw(scene::Scene)
     setup_plot(scene)
+    draw(scene)
+end
+# The main method - this draws all plots and child scenes
+function draw(scene::Scene)
     foreach(plot-> draw(scene, plot), scene.plots)
     foreach(child-> draw(child), scene.children)
 end
-
 # The lower level method.  This dispatches on primitives, meaning that
 # we have some guarantees about their attributes.
 function draw(scene::Scene, primitive::AbstractPlotting.Combined)

@@ -2,7 +2,7 @@
 const GR_SUPPORTED_TYPES = Union{
     MIME"image/svg", MIME"image/svg+xml", MIME"image/png", MIME"image/jpeg",
     MIME"image/tiff", MIME"image/bmp", MIME"application/pdf",
-    MIME"application/postscript", MIME"application/x-tex", MIME"text/plain"
+    MIME"application/postscript", MIME"application/x-tex"
 }
 
 backend_showable(::GRBackend, ::GR_SUPPORTED_TYPES, scene::SceneLike) = true
@@ -13,7 +13,7 @@ function gr_save(io, scene, filetype)
     touch(fp)
 
     GR.beginprint(fp)
-    draw(scene)
+    gr_draw(scene)
     GR.endprint()
 
     write(io, read(fp))
@@ -61,20 +61,11 @@ function backend_show(::GRBackend, io::IO, ::MIME"application/x-tex", scene::Sce
     fp = tempname() * ".tex"
     withenv("GKS_WSTYPE" => "pgf", "GKS_FILEPATH" => fp) do
         GR.clearws()
-        draw(scene)
+        gr_draw(scene)
         GR.updatews()
     end
 
     write(io, read(fp))
-end
-
-function backend_show(::GRBackend, io::IO, ::MIME"text/plain", scene::Scene)
-    withenv("GKS_WSTYPE" => "0") do
-        AbstractPlotting.update!(scene)
-        GR.clearws()
-        draw(scene)
-        GR.updatews()
-    end
 end
 
 function gr_record(f::Function, filename::String, scene::Scene, iter)
@@ -87,7 +78,7 @@ function gr_record(f::Function, filename::String, scene::Scene, iter)
         for i in iter
             GR.clearws()
             f(i)
-            draw(scene)
+            gr_draw(scene)
         end
     end
 end
