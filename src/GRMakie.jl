@@ -6,6 +6,8 @@ import GR
 
 import AbstractPlotting: backend_showable, backend_show
 
+using AbstractPlotting.IntervalSets: ClosedInterval
+
 include("utils.jl")
 include("primitives.jl")
 include("saving.jl")

@@ -190,7 +190,26 @@ end
 Plots a surface, where `(x, y, z)` are supposed to lie on a grid.
 """
 function draw(scene::Scene, plot::Surface)
+    # TODO:
+    # - transform x and y points into the screen's space
     @get_attribute(plot, (colormap,colorrange,shading))
+    cmap = AbstractPlotting.to_colormap(colormap)
+
+    x, y, z = plot[1][], plot[2][], plot[3][]
+
+    GR.setcolormapfromrgb(red.(cmap), green.(cmap), blue.(cmap))
+
+    if is_uniformly_spaced(x) && is_uniformly_spaced(y)
+        x = ensure_vector(x; size = size(z)[1])
+        y = ensure_vector(y; size = size(z)[2])
+        # points = Point2f0.(x, y)
+        # positions = map(points) do pos
+        #     # take camera from scene + model transformation matrix and apply it to pos
+        #     project_position(scene, pos, plot[:model][])
+        # end
+        # x, y = first.(positions), last.(positions)
+        GR.surface(x, y, z, 4) # 4 => COLORED_MESH
+    end
 end
 
 """
