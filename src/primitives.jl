@@ -96,17 +96,18 @@ end
 Plots a marker for each element in `(x, y, z)`, `(x, y)`, or `positions`.
 """
 function draw(scene::Scene, plot::Scatter)
-    fields = @get_attribute(plot, (color, markersize, strokecolor, strokewidth, marker))
+    fields = @get_attribute(plot, (color, colormap, colorrange, markersize, strokecolor, strokewidth, marker))
     model = plot[:model][]
-    broadcast_foreach(plot[1][], fields...) do point, c, markersize, strokecolor, strokewidth, marker
+    color isa AbstractVector && (color = to_image(collect(color), plot))
+    broadcast_foreach(plot[1][], color, markersize, strokecolor, strokewidth, marker) do point, c, markersize, strokecolor, strokewidth, marker
         scale = project_scale(scene, markersize)[1] * 2500 / 6
         pos = project_position(scene, point, model)
         GR.setmarkertype(get(marker_translation_table, marker, GR.MARKERTYPE_SOLID_CIRCLE))
         GR.setmarkersize(scale)
         GR.setbordercolorind(gr_colorind(strokecolor))
         GR.setborderwidth(strokewidth)
-        GR.setmarkercolorind(Int(GR.inqcolorfromrgb(c.r, c.g, c.b)))
-        GR.settransparency(c.alpha)
+        GR.setmarkercolorind(gr_colorind(c))
+        GR.settransparency(alpha(c))
         GR.polymarker([pos[1]], [pos[2]])
     end
 end
@@ -120,8 +121,8 @@ function draw(scene::Scene, plot::Image)
     @get_attribute plot (colormap, colorrange)
 end
 
-to_image(values::Matrix{<: Colorant}, attributes) = RGBA.(values)
-function to_image(values::Matrix{<: Real}, attributes)
+to_image(values::VecOrMat{<: Colorant}, attributes) = RGBA.(values)
+function to_image(values::VecOrMat{<: Real}, attributes)
     AbstractPlotting.@get_attribute attributes (colormap, colorrange)
     return AbstractPlotting.interpolated_getindex.(Ref(colormap), values, (colorrange,))
 end
@@ -182,6 +183,10 @@ Plots a volume. Available algorithms are:
 function draw(scene::Scene, plot::Volume)
     @get_attribute(plot, (algorithm,absorption,isovalue,isorange,colormap,colorrange))
 
+    x, y, z = plot[1][], plot[2][], plot[3][]
+    if algorithm == AbstractPlotting.MaximumIntensityProjection
+
+    end
 end
 
 """
@@ -246,7 +251,7 @@ function setup_plot(scene)
     GR.selntran(0)
 end
 
-# The toplevel method - this sets up GR attributes et cetera
+# The toplevel method - this sets up GR attributes, et cetera
 function gr_draw(scene::Scene)
     setup_plot(scene)
     draw(scene)
