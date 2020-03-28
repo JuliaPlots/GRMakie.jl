@@ -223,7 +223,7 @@ end
 Plots a 3D mesh.
 """
 function draw(scene::Scene, plot::Mesh)
-    @get_attribute(plot, (interpolate,shading,colormap,colorrange))
+    # @get_attribute(plot, (interpolate,shading,colormap,colorrange))
 end
 
 
