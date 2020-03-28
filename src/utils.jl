@@ -1,15 +1,31 @@
+topparent(x::Scene) = isnothing(x.parent) ? x : topparent(x.parent)
+
 function project_position(scene, point, model)
     p4d = to_ndim(Vec4f0, to_ndim(Vec3f0, point, 0f0), 1f0)
+
     clip = scene.camera.projectionview[] * model * p4d
-    p = (clip / clip[4])[Vec(1, 2)]
-    p = collect((p .+ 1) ./ 2)
-    w, h = scene.camera.resolution[]
+
+    # p_m1_p1 is in scene-relative -1 to 1 space
+    p_m1_p1 = (clip / clip[4])[Vec(1, 2)]
+
+    # p_0_1 is in scene-relative 0 to 1 space
+    p_0_1 = collect((p_m1_p1 .+ 1) ./ 2)
+
+    subarea = scene.px_area[]
+    rootarea = topparent(scene).px_area[]
+
+    p_subscene = p_0_1 .* subarea.widths .+ subarea.origin
+
+    @assert rootarea.origin == Point2f0(0, 0)
+    p_0_1_root = p_subscene ./ rootarea.widths
+
+    w, h = rootarea.widths
     if w > h
-        p[2:2:end] .*= (h / w)
+        p_0_1_root[2:2:end] .*= (h / w)
     else
-        p[1:2:end] .*= (w / h)
+        p_0_1_root[1:2:end] .*= (w / h)
     end
-    return Vec2f0(p)
+    return Vec2f0(p_0_1_root)
 end
 
 project_scale(scene::Scene, s::Number) = project_scale(scene, Vec2f0(s))
