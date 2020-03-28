@@ -258,11 +258,21 @@ function gr_draw(scene::Scene)
 end
 # The main method - this draws all plots and child scenes
 function draw(scene::Scene)
-    foreach(plot-> draw(scene, plot), scene.plots)
-    foreach(child-> draw(child), scene.children)
+    for plot in scene.plots
+        if plot.visible[]
+            draw(scene, plot)
+        end
+    end
+    for child in scene.children
+        draw(child)
+    end
 end
 # The lower level method.  This dispatches on primitives, meaning that
 # we have some guarantees about their attributes.
 function draw(scene::Scene, primitive::AbstractPlotting.Combined)
-    foreach(x-> draw(scene, x), filter(x -> x.visible[], primitive.plots))
+    for p in primitive.plots
+        if p.visible[]
+            draw(scene, p)
+        end
+    end
 end
