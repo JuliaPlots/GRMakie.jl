@@ -76,13 +76,35 @@ function draw(scene::Scene, plot::AbstractPlotting.Text)
     @get_attribute(plot, (textsize, color, font, align, rotation, model))
     txt = to_value(plot[1])
     position = plot.attributes[:position][]
+
+    # hack layouting into the process here
+    if position isa Point
+        position, _ = AbstractPlotting.layout_text(
+            txt, position, textsize,
+            font, align, rotation, model
+        )
+    end
+
+    # hardcode this against abstractplotting madness
+    # all textsizes in the vector are different, one for each glyph, which
+    # has to do with the texture atlas
+    # 20 is just the default makielayout fontsize
+    textsize = 20f0
+
+    plotwindow_width = topparent(scene).px_area[].widths[1]
+
     N = length(txt)
     broadcast_foreach(1:N, position, textsize, color, font, rotation) do i, p, ts, cc, f, r
         pos = project_position(scene, p, model)
         chup = r * Vec2f0(0, 1)
         GR.setcharup(chup[1], chup[2])
-        GR.settextfontprec(233, 3)
-        GR.setcharheight(0.018) # ts ???
+        
+        # helvetica in string mode seems to work relatively well for some reason
+        GR.settextfontprec(105, 0)
+        # GR.setcharheight(0.018) # ts ???
+
+        # convert textsize to plotwindow_width percentage
+        GR.setcharheight(textsize / plotwindow_width * 0.666) # why 2/3ds? window size seems always too large
         GR.settextcolorind(Int(GR.inqcolorfromrgb(cc.r, cc.g, cc.b)))
         GR.settransparency(cc.alpha)
         GR.settextalign(1, 4)
