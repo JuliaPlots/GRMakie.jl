@@ -76,13 +76,35 @@ function draw(scene::Scene, plot::AbstractPlotting.Text)
     @get_attribute(plot, (textsize, color, font, align, rotation, model))
     txt = to_value(plot[1])
     position = plot.attributes[:position][]
+
+    # hack layouting into the process here
+    if position isa Point
+        position, _ = AbstractPlotting.layout_text(
+            txt, position, textsize,
+            font, align, rotation, model
+        )
+    end
+
+    # hardcode this against abstractplotting madness
+    # all textsizes in the vector are different, one for each glyph, which
+    # has to do with the texture atlas
+    # 20 is just the default makielayout fontsize
+    textsize = 20f0
+
+    plotwindow_width = topparent(scene).px_area[].widths[1]
+
     N = length(txt)
     broadcast_foreach(1:N, position, textsize, color, font, rotation) do i, p, ts, cc, f, r
         pos = project_position(scene, p, model)
         chup = r * Vec2f0(0, 1)
         GR.setcharup(chup[1], chup[2])
-        GR.settextfontprec(233, 3)
-        GR.setcharheight(0.018) # ts ???
+        
+        # helvetica in string mode seems to work relatively well for some reason
+        GR.settextfontprec(105, 0)
+        # GR.setcharheight(0.018) # ts ???
+
+        # convert textsize to plotwindow_width percentage
+        GR.setcharheight(textsize / plotwindow_width * 0.666) # why 2/3ds? window size seems always too large
         GR.settextcolorind(Int(GR.inqcolorfromrgb(cc.r, cc.g, cc.b)))
         GR.settransparency(cc.alpha)
         GR.settextalign(1, 4)
@@ -223,7 +245,7 @@ end
 Plots a 3D mesh.
 """
 function draw(scene::Scene, plot::Mesh)
-    @get_attribute(plot, (interpolate,shading,colormap,colorrange))
+    # @get_attribute(plot, (interpolate,shading,colormap,colorrange))
 end
 
 
@@ -258,11 +280,21 @@ function gr_draw(scene::Scene)
 end
 # The main method - this draws all plots and child scenes
 function draw(scene::Scene)
-    foreach(plot-> draw(scene, plot), scene.plots)
-    foreach(child-> draw(child), scene.children)
+    for plot in scene.plots
+        if plot.visible[]
+            draw(scene, plot)
+        end
+    end
+    for child in scene.children
+        draw(child)
+    end
 end
 # The lower level method.  This dispatches on primitives, meaning that
 # we have some guarantees about their attributes.
 function draw(scene::Scene, primitive::AbstractPlotting.Combined)
-    foreach(x-> draw(scene, x), filter(x -> x.visible[], primitive.plots))
+    for p in primitive.plots
+        if p.visible[]
+            draw(scene, p)
+        end
+    end
 end
