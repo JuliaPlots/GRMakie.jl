@@ -10,7 +10,7 @@ GR = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
-AbstractPlotting = "0.10, 0.11"
+AbstractPlotting = "0.10, 0.11, 0.13"
 Colors = "0.12"
 GR = "0.46, 0.47, 0.48, 0.49, 0.50, 0.52"
 julia = "1"
